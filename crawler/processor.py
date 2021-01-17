@@ -1,17 +1,23 @@
-import pymongo
+import pymysql as py
 
 
 class Processor(object):
 
-    def __init__(self, host=None, port=27017, database='douban', collection='comments'):
-        self.client = pymongo.MongoClient(host=host, port=port)
-        self.database = database
-        self.collection = collection
+    def __init__(self):
+        py.install_as_MySQLdb()
+        self.connect = py.connect(host="127.0.0.1",
+                                 user="debian-sys-maint",
+                                 password="aVANykWZnldyXF2Q",
+                                 port=3306,
+                                 database="douban",
+                                 charset='utf8mb4')
+        self.cursor = self.connect.cursor()
 
     def __del__(self):
-        self.client.close()
+        self.connect.close()
 
-    def process(self, results):
-        # print(results)
-        crawler = self.client.get_database(self.database).get_collection(self.collection)
-        return crawler.insert_many(results)
+    def Commment(self,user_name, user_url, user_ID, user_comment,user_score, ID='34962956'):
+        info = str(ID) + "','" + user_name + "'," + str(user_score) + ",'" + user_comment + "','" + user_url + "','" + user_ID + "')"
+        print(info)
+        self.cursor.execute("replace into short_comments (ID,user_name,user_score,user_comment, user_url, user_ID) values ('" + info)
+        self.connect.commit()
