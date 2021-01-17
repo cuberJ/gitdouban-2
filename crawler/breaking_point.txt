@@ -1,1 +1,1 @@
-https://movie.douban.com/subject/24733428/comments?start=80&limit=20&sort=time&status=P
+https://movie.douban.com/subject/24733428/comments?start=120&limit=20&sort=new_score&status=P

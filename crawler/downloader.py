@@ -11,7 +11,7 @@ def download(url):
         # 如果不登录抓取的数据可能会很有限（未证实），这里简化处理认证部分逻辑，直接把我的cookie信息复制过来
         resp = requests.get(url,
                             headers=HEADERS,
-                            timeout=3.0)
+                            timeout=5.0)
         resp.raise_for_status()
         return resp.text
     except requests.RequestException as e:

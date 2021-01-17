@@ -1,5 +1,5 @@
 import pymysql as py
-
+from crawler.user import UserInfo
 
 class Processor(object):
 
@@ -16,8 +16,11 @@ class Processor(object):
     def __del__(self):
         self.connect.close()
 
-    def Commment(self,user_name, user_url, user_ID, user_comment,user_score, ID='34962956'):
+    def Commment(self, user_name, user_url, user_ID, user_comment,user_score, ID='34962956'):
         info = str(ID) + "','" + user_name + "'," + str(user_score) + ",'" + user_comment + "','" + user_url + "','" + user_ID + "')"
         print(info)
+        user_time = UserInfo(user_url)
+        user_info = user_name + "','" + user_url + "','" + user_ID + "','" + user_time + "')"
         self.cursor.execute("replace into short_comments (ID,user_name,user_score,user_comment, user_url, user_ID) values ('" + info)
+        self.cursor.execute("replace into user_info (user_name, user_url, user_ID, register_time) values ('" + user_info)
         self.connect.commit()

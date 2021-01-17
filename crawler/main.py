@@ -5,6 +5,7 @@ from crawler.downloader import download
 from crawler.parser import parse
 from crawler.processor import Processor
 import re
+import random
 import time
 
 movie_id = 24733428
@@ -29,15 +30,20 @@ class Crawler(object):
             if re.match(r"https://.*", temp):
                 new_url = temp
                 print("url修改为断点", new_url)
+                urls[0] = new_url
             b.close()
-        urls[0] = new_url
+
         self._manager.append_new_urls(urls)
 
         print(urls)
         while self._manager.has_new_url():
-            time.sleep(2)
+            time.sleep(random.randint(1, 5))
             new_url = self._manager.get_new_url()
             print('开始下载第{:03}个URL：{}'.format(number, new_url))
+            with open("breaking_point.txt", "w+", encoding="utf-8") as f:
+                f.truncate(0)
+                f.write(new_url)
+                f.close()
             html = download(new_url)
             if html is None:
                 # print('html is empty .')
@@ -55,10 +61,7 @@ class Crawler(object):
                                              user_score=result['star']) # user_name, user_url, user_ID, user_comment,user_score, ID
                     print("database start .......")
             number += 1
-            with open("breaking_point.txt", "w+", encoding="utf-8") as f:
-                f.truncate(0)
-                f.write(new_url)
-                f.close()
+
         return number
 
 
@@ -66,7 +69,7 @@ if __name__ == "__main__":
     # print("what's the success? what's the failure? what's the life? what's the dream? what's other".replace("'"," "))
     crawler = Crawler()
     # 同时抓取看过和未看过的链接，两者区别在于status查询参数上
-    root_urls = [#'?'.join([base_url, 'start=0&limit=20&sort=new_score&status=P']),
-                 '?'.join([base_url, 'start=0&limit=20&sort=time&status=P'])]
+    root_urls = ['?'.join([base_url, 'start=0&limit=20&sort=new_score&status=P'])]
+                 #'?'.join([base_url, 'start=0&limit=20&sort=time&status=P'])]
     nums = crawler.start(root_urls)
     print('爬虫执行完成，共抓取{}个URL'.format(nums))
