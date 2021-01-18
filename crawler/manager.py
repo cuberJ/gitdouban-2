@@ -5,13 +5,13 @@ class Manager(object):
         self.new_urls = []
         self.old_urls = []
 
-    def append_new_urls(self, urls):
+    def append_new_urls(self, urls, base_url):
         if len(urls) == 0:
             return
         for url in urls:
             # 过滤非目标URL
-            if self.base_url not in url:
-                continue
+            #if self.base_url not in url:
+             #   continue
             # 排序倒序数据，避免重复抓取
             if '&limit=-20' in url:
                 continue
