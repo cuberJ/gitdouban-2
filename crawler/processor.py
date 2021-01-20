@@ -69,7 +69,7 @@ class Processor(object):
     def mBoxList(self, movie_name, mbox, movie_ID, score):
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         print(timestamp)
-        info = str(movie_name) + "','" + str(movie_ID) + "','" + str(timestamp) + "'," + str(score) + "," + str(mbox) + ")"
+        info = str(movie_ID) + "','" + str(movie_name) + "','" + str(timestamp) + "'," + str(score) + "," + str(mbox) + ")"
         print(info)
         self.cursor.execute("insert into cur_income (ID, name, dates, scores, incomes) values('" + info)
         self.connect.commit()
