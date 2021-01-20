@@ -7,10 +7,24 @@ from crawler.processor import *
 import re
 import random
 import time
+import urllib
+import requests
 
 movie_id = 24733428
 base_url = 'https://movie.douban.com/subject/{}/comments'.format(movie_id)
 review_base_url = 'https://movie.douban.com/subject/{}/reviews'.format(movie_id)
+HEADERS={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87'
+                  'Safari/537.36',
+         'Cookie':"uuid_n_v=v1; uuid=084A0C205AD011EB9801B7C95A8ED85D27C942E7072C4F38979342DCCDC84A25;"
+                  " _csrf=8813f293299e6a606892323d8aec33d45bb5f368fe8ed4ec75edae765c74c4d3;"
+                  " Hm_lvt_703e94591e87be68cc8da0da7cbd0be2=1611113512; "
+                  "Hm_lpvt_703e94591e87be68cc8da0da7cbd0be2=1611113527; "
+                  "_lx_utm=utm_source%3DBaidu%26utm_medium%3Dorganic; "
+                  "_lxsdk_cuid=1771dd94269c8-080aa6fea17ecb-7824675c-1fa400-1771dd9426ac8; "
+                  "_lxsdk_s=1771dd9426b-626-88e-f22%7C%7C5; "
+                  "_lxsdk=084A0C205AD011EB9801B7C95A8ED85D27C942E7072C4F38979342DCCDC84A25; "
+                  "__mta=145013259.1611113514071.1611113514071.1611113514071.1"
+         }
 
 
 class Crawler(object):
@@ -110,7 +124,7 @@ class Crawler(object):
         return number
 
     def SimilarMovies(self):
-        # 获取所有相似电影推荐的评分，评论数
+        # 获取所有相似电影推荐的评分，评论数,并且通过伊恩网爬取历史票房数据
         similar_html = download("https://movie.douban.com/subject/24733428/")
         similar_html, similar_name = SilimarMovie(similar_html)
         for i in range(len(similar_name)):
@@ -120,23 +134,53 @@ class Crawler(object):
             score, comment_num, review, tags = Score(temp_html)
             self._processor.BasicComment(comment_num=comment_num, score=score, long_comment_num=review, tags=tags,
                                          name=similar_name[i], ID=id)
-        # time.sleep(100)
 
-def testrun(url):
-    #html = download(url)
-    html = None
-    with open("long.html", "r+", encoding="utf-8") as f:
-        html = f.read()
-        f.close()
-    Reviews(html, url)
+
+    def SimilarMoviesIncome(self):
+        cursor = self._processor.connect.cursor()
+        cursor.execute("select name from basic_info where income is null")
+        similar_name = cursor.fetchall()
+        print(len(similar_name))
+        for i in range(len(similar_name)):
+            movie_name = similar_name[i][0]
+            href = urllib.request.quote("https://maoyan.com/query?kw="+movie_name, safe=";/?:@&=+$,", encoding="utf-8")  # 编码
+            print(href)
+            similar_income_html = requests.get(href, headers=HEADERS).text
+            with open("long.html", 'w+', encoding="utf-8") as f:
+                f.write(similar_income_html)
+                f.close()
+            href = GetSimilarMovieIncome(similar_income_html)
+            html = requests.get(href, headers=HEADERS).text
+            with open("long.html", 'w+', encoding="utf-8") as f:
+                f.write(html)
+                f.close()
+            mbox = Mbox(html)
+            self._processor.mBox(movie_name=movie_name, mbox=mbox)
+
+
+    def mBoxList(self, movie_name, movie_ID):
+        while True:
+            html_main = download("https://piaofang.maoyan.com/box-office?ver=normal")
+            html_score = download("https://movie.douban.com/subject/24733428/?from=showing")
+            score, mbox = GetmBox(movie_name=movie_name, html_main=html_main, html_score=html_score)
+            self._processor.mBoxList(movie_ID=movie_id, movie_name = movie_name, mbox=mbox, score=score)
+            time.sleep(30)
+
+
+    def testrun(self, url):
+        self.mBoxList("心灵奇旅", movie_id)
+
 
 if __name__ == "__main__":
-    # testrun("https://movie.douban.com/subject/24733428/reviews")
 
     crawler = Crawler()
+    crawler.testrun(" ")
+    # crawler.testrun("https://movie.douban.com/subject/24733428/reviews")
+    # time.sleep(100)
     # 同时抓取看过和未看过的链接，两者区别在于status查询参数上
     root_urls = ['?'.join([review_base_url, 'start=0'])]
                  #'?'.join([base_url, 'start=0&limit=20&sort=time&status=P'])]
     # nums = crawler.start(root_urls)
-    nums = crawler.start2(root_urls)
-    print('爬虫执行完成，共抓取{}个URL'.format(nums))
+    # nums = crawler.start2(root_urls)
+    crawler.SimilarMoviesIncome()
+    # print('爬虫执行完成，共抓取{}个URL'.format(nums))

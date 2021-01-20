@@ -1,5 +1,16 @@
 import pymysql as py
 from crawler.user import UserInfo
+import time
+
+'''
+    数据库分为basic_info, short_comments, long_comments 个表
+    用户信息：user='debian-sys-maint', password='aVANykWZnldyXF2Q',
+    1. basic_info的表项包括：ID,name,stars,score,comment_number,long_comment_number，分别对应varchar,vachar,int,float,int,int
+    2. short_comments的表项包括：ID(varchar15)，user_name(varchar30),user_score(float),user_comment(text), user_ID(varchar(30),user_url(varchar(100)
+    3. long_comments的表项包括：同上
+    4. user_info表项包括：user_ID(varchar(30)),user_url(varchar(100)),user_name(varchar(30)),register_time(time),is_robot(smallint)
+    5. cur_incomes表项包括:ID(varchar(15)),name(varchar(30)),scores(float(2)),incomes(float(2)),dates(datetime),predict_income(float(2))
+'''
 
 class Processor(object):
 
@@ -50,3 +61,16 @@ class Processor(object):
         self.cursor.execute("replace into user_info "
                             "(user_name, user_url, user_ID, register_time) values ('" + user_info)
         self.connect.commit()
+
+    def mBox(self, movie_name, mbox):
+        self.cursor.execute("update basic_info set income=" + str(mbox) + " where name='"+str(movie_name)+"'")
+        self.connect.commit()
+
+    def mBoxList(self, movie_name, mbox, movie_ID, score):
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        print(timestamp)
+        info = str(movie_name) + "','" + str(movie_ID) + "','" + str(timestamp) + "'," + str(score) + "," + str(mbox) + ")"
+        print(info)
+        self.cursor.execute("insert into cur_income (ID, name, dates, scores, incomes) values('" + info)
+        self.connect.commit()
+

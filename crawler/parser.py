@@ -1,6 +1,8 @@
 import datetime
 import urllib.parse
 import re
+from crawler.downloader import download
+
 SCORE={"还行": 3, "推荐": 4, "力荐": 5, "较差": 2, "很差": 1, "0": 0}
 
 from bs4 import BeautifulSoup
@@ -117,3 +119,55 @@ def Reviews(html, url):
     for i in results:
         print(i)
     return links, results
+
+def GetSimilarMovieIncome(html):
+    soup = BeautifulSoup(html, 'lxml')
+    href = soup.find_all('dl', attrs={'class': 'movie-list'})[0]
+    #print(href)
+    href = href.find_all('div', attrs={'class': "channel-detail movie-item-title"})[0].find_all('a')[0].get('href')
+    href = "https://maoyan.com" + href
+    print(href)
+    return href
+
+def Mbox(html):
+    soup = BeautifulSoup(html, "lxml")
+    #href = soup.find_all("div", attrs={"class":"tab-desc tab-content active"})[0].find_all('div', attrs={'class': "module"})[-2]
+    # print(href)
+    # href = href.find_all('div', attrs={'class': "film-mbox-item"})
+    # print(href)
+    #href = href.find_all('div', attrs={'class': 'mbox-name'})
+    #print(href)
+    href = soup.find_all('div', attrs={'class': 'mbox-name'})
+    print(href)
+    for i in range(len(href)):
+        if(href[i].string == '累计票房(万)'):
+            href = href[i-1].string
+            break
+    print(href)
+    if re.match(r".*\d+", href):
+        return href
+    return -1
+
+
+def GetmBox(html_main, html_score, movie_name):
+    # html_main = download("https://piaofang.maoyan.com/box-office?ver=normal")
+    soup = BeautifulSoup(html_main, "lxml")
+    list1 = soup.find_all('tr', attrs={'class': re.compile(r'body-row.*')})
+    # html_score = download("https://piaofang.maoyan.com/movie/553231/audienceRating?usePageCache=true")
+    for item in list1:
+        if item.find_all('p', attrs={'class': 'movie-name'})[0].string == movie_name:
+            mbox = item.find_all('div', attrs={'class': "boxDesc-wrap red-color"})[0].string
+            print("mbox: ", mbox)
+            with open("long.html", 'w+', encoding="utf-8") as f:
+                f.write(html_score)
+                f.close()
+            html_score = BeautifulSoup(html_score, "lxml")
+
+            score = html_score.find_all('strong', attrs={'class': 'll rating_num'})[0].string
+            print("score:", score)
+            return score, mbox
+    return 0, 0
+
+
+
+
