@@ -3,7 +3,8 @@ import urllib.parse
 import re
 from crawler.downloader import download
 
-SCORE={"还行": 3, "推荐": 4, "力荐": 5, "较差": 2, "很差": 1, "0": 0}
+SCORE = {"还行": 3, "推荐": 4, "力荐": 5, "较差": 2, "很差": 1, "0": 0}
+movie_id = "24733428"
 
 from bs4 import BeautifulSoup
 
@@ -87,7 +88,7 @@ def Reviews(html, url):
     # 超链接列表
     links = []
     link = soup.find_all('span', attrs={"class": "next"})[0].find_all('a')[0].get('href')
-    link = "https://movie.douban.com/subject/24733428/reviews" + link
+    link = "https://movie.douban.com/subject/{}/reviews".format(movie_id) + link
     links.append(link)
 
     # 数据列表
@@ -158,9 +159,6 @@ def GetmBox(html_main, html_score, movie_name):
         if item.find_all('p', attrs={'class': 'movie-name'})[0].string == movie_name:
             mbox = item.find_all('div', attrs={'class': "boxDesc-wrap red-color"})[0].string
             print("mbox: ", mbox)
-            with open("long.html", 'w+', encoding="utf-8") as f:
-                f.write(html_score)
-                f.close()
             html_score = BeautifulSoup(html_score, "lxml")
 
             score = html_score.find_all('strong', attrs={'class': 'll rating_num'})[0].string

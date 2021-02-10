@@ -41,7 +41,7 @@ class Crawler(object):
         """
         number = 0
         # self.SimilarMovies() # 如果需要更新相关电影，再启动这个函数
-        with open("breaking_point.txt", "r+", encoding="utf-8") as b:
+        with open("document/breaking_point.txt", "r+", encoding="utf-8") as b:
             temp = b.readline()
             if re.match(r"https://.*", temp):
                 new_url = temp
@@ -57,7 +57,7 @@ class Crawler(object):
             time.sleep(random.randint(1, 5))
             new_url = self._manager.get_new_url()
             print('开始下载第{:03}个URL：{}'.format(number, new_url))
-            with open("breaking_point.txt", "w+", encoding="utf-8") as f:
+            with open("document/breaking_point.txt", "w+", encoding="utf-8") as f:
                 f.truncate(0)
                 f.write(new_url)
                 f.close()
@@ -84,7 +84,7 @@ class Crawler(object):
     def start2(self, urls):
         number = 0
         # self.SimilarMovies() # 如果需要更新相关电影，再启动这个函数
-        with open("long_breaking_point.txt", "r+", encoding="utf-8") as b:
+        with open("document/long_breaking_point.txt", "r+", encoding="utf-8") as b:
             temp = b.readline()
             if re.match(r"https://.*", temp):
                 new_url = temp
@@ -100,7 +100,7 @@ class Crawler(object):
             time.sleep(random.randint(1, 5))
             new_url = self._manager.get_new_url()
             print('开始下载第{:03}个URL：{}'.format(number, new_url))
-            with open("long_breaking_point.txt", "w+", encoding="utf-8") as f:
+            with open("document/long_breaking_point.txt", "w+", encoding="utf-8") as f:
                 f.truncate(0)
                 f.write(new_url)
                 f.close()
@@ -125,7 +125,7 @@ class Crawler(object):
 
     def SimilarMovies(self):
         # 获取所有相似电影推荐的评分，评论数,并且通过伊恩网爬取历史票房数据
-        similar_html = download("https://movie.douban.com/subject/24733428/")
+        similar_html = download("https://movie.douban.com/subject/{}/".format(movie_id))
         similar_html, similar_name = SilimarMovie(similar_html)
         for i in range(len(similar_name)):
             temp_html = download(similar_html[i])
@@ -146,12 +146,9 @@ class Crawler(object):
             href = urllib.request.quote("https://maoyan.com/query?kw="+movie_name, safe=";/?:@&=+$,", encoding="utf-8")  # 编码
             print(href)
             similar_income_html = requests.get(href, headers=HEADERS).text
-            with open("long.html", 'w+', encoding="utf-8") as f:
-                f.write(similar_income_html)
-                f.close()
             href = GetSimilarMovieIncome(similar_income_html)
             html = requests.get(href, headers=HEADERS).text
-            with open("long.html", 'w+', encoding="utf-8") as f:
+            with open("document/long.html", 'w+', encoding="utf-8") as f:
                 f.write(html)
                 f.close()
             mbox = Mbox(html)
@@ -161,10 +158,10 @@ class Crawler(object):
     def mBoxList(self, movie_name, movie_ID):
         while True:
             html_main = download("https://piaofang.maoyan.com/box-office?ver=normal")
-            html_score = download("https://movie.douban.com/subject/24733428/?from=showing")
+            html_score = download("https://movie.douban.com/subject/{}/?from=showing".format(movie_id))
             score, mbox = GetmBox(movie_name=movie_name, html_main=html_main, html_score=html_score)
             self._processor.mBoxList(movie_ID=movie_id, movie_name = movie_name, mbox=mbox, score=score)
-            time.sleep(30)
+            time.sleep(300)
 
 
     def testrun(self, url):
@@ -175,7 +172,7 @@ if __name__ == "__main__":
 
     crawler = Crawler()
     crawler.testrun(" ")
-    # crawler.testrun("https://movie.douban.com/subject/24733428/reviews")
+    # crawler.testrun("https://movie.douban.com/subject/{}/reviews".format(movie_id))
     # time.sleep(100)
     # 同时抓取看过和未看过的链接，两者区别在于status查询参数上
     root_urls = ['?'.join([review_base_url, 'start=0'])]

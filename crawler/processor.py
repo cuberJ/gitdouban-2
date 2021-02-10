@@ -12,6 +12,8 @@ import time
     5. cur_incomes表项包括:ID(varchar(15)),name(varchar(30)),scores(float(2)),incomes(float(2)),dates(datetime),predict_income(float(2))
 '''
 
+movie_id = "24733428"
+
 class Processor(object):
 
     def __init__(self):
@@ -27,7 +29,7 @@ class Processor(object):
     def __del__(self):
         self.connect.close()
 
-    def Commment(self, user_name, user_url, user_ID, user_comment,user_score, ID='24733428'):
+    def Commment(self, user_name, user_url, user_ID, user_comment, user_score, ID = movie_id):
         info = str(ID) + "','" + user_name + "'," + str(user_score) \
                + ",'" + user_comment + "','" + user_url + "','" + user_ID + "')"
         print(info)
@@ -50,7 +52,7 @@ class Processor(object):
             self.cursor.execute("replace into Tags(ID, tag) values (" + info)
             self.connect.commit()
 
-    def ReviewComment(self,user_name, user_url, user_ID,user_score, ID='24733428'):
+    def ReviewComment(self, user_name, user_url, user_ID, user_score, ID = movie_id):
         info = str(ID) + "','" + user_name + "'," + str(user_score) \
                + ",'" + user_url + "','" + user_ID + "')"
         print(info)
