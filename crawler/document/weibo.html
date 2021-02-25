@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" class="mobile">
+<head>
+    <meta charset="UTF-8">
+          <meta name="viewport" content="initial-scale=1, width=device-width, maximum-scale=1, user-scalable=no">
+          <link rel="dns-prefetch" href="https://s3plus.meituan.net" />
+          <link rel="dns-prefetch" href="https://p0.meituan.net" />
+          <link rel="stylesheet" href="https://s3plus.meituan.net/v1/mss_e2821d7f0cfe4ac1bf9202ecf9590e67/cdn-prod/file:d6a62569/common.css">
+          <style>
+              html, body{
+                  max-width: 430px;
+                  margin: 0 auto;
+              }
+              .m-page{
+                  display:flex;
+                  align-items:center;
+                  justify-content:center;
+                  flex-direction: column;
+                  min-height: 100vh;
+              }
+              .m-page .hint{
+                  background: url(https://s0.meituan.net/bs/file/?f=myfe/piaofang:img/news/comments-none-ccd31fb5.png) no-repeat center .4rem;
+                  background-size: 2rem;
+                  margin-top: 2rem;
+                  padding: .3rem 0;
+                  padding-top: 2.8rem;
+                  color: #666;
+                  text-align: center;
+                  font-size: .3rem;
+                  margin-bottom: .2rem;
+              }
+              .m-page .info{
+                margin-top: 2.8rem;
+              }
+              .m-page .info{
+                  padding-top: .08rem;
+                  color: #999;
+                  text-align: center;
+                  font-size: .28rem;
+              }
+              .m-page .btn{
+                display: none;
+                padding: .23rem .56rem;
+                border-radius: 2px;
+                background: #ef4238;
+                position: relative;
+                color: #fff;
+                text-decoration: none;
+                font-size: .3rem;
+              }
+              .error-msg{
+                    color: #999;
+                    font-size: .24rem;
+                    line-height: .32rem;
+                    margin: .36rem auto 0;
+                    padding:  0 .32rem;
+                    max-width: 5rem;
+                }
+    </style>
+    <title>ç«ç¼ä¸ä¸ç</title>
+</head>
+<body>
+    <div id="app">
+        <div class="m-page">
+            <p class="hint">æ±æ­ï¼æ¨çè®¿é®è¯·æ±è¿äºé¢ç¹</p>
+            <a href="https://piaofang.maoyan.com" class="btn" id="btn">åå°é¦é¡µ</a>
+            <!-- <p class="info">IP: 120.1.2.3</p> -->
+            <div class="error-msg">
+                <div>éè¯¯ä¿¡æ¯ï¼</div>
+                <div id="IP">userIpï¼</div>
+                <div id="UA">userAgentï¼</div>
+                <div id="time">æ¶é´ï¼</div>
+            </div>
+            <div class="info">
+                <div class="info-item">å¦æé®é¢ï¼è¯·å°é¡µé¢æªå¾å¹¶åéè³v@maoyan.com</div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="https://m.maoyan.com/asgard/util/clientip.js"></script>
+    <script>
+        var $ip = document.getElementById('IP');
+        var $us = document.getElementById('UA');
+        $ip.innerText += clientip;
+        $us.innerText += navigator.userAgent;
+        window.addEventListener("load", function(event) {
+            var now = new Date().Format("yyyy-MM-dd hh:mm:ss");
+            var $time = document.getElementById('time');
+            $time.innerHTML += now;
+            var rPro = /moviepro/i;
+            var isPro = rPro.test(window.navigator.userAgent);
+            if (!isPro) {
+                var $btn = document.getElementById('btn');
+                $btn.style.display = 'block';
+            }
+        });
+
+        Date.prototype.Format = function (fmt) {
+            var o = {
+            "M+": this.getMonth() + 1, //æä»½
+            "d+": this.getDate(), //æ¥
+            "h+": this.getHours(), //å°æ¶
+            "m+": this.getMinutes(), //å
+            "s+": this.getSeconds(), //ç§
+            "q+": Math.floor((this.getMonth() + 3) / 3), //å­£åº¦
+            "S": this.getMilliseconds() //æ¯«ç§
+            };
+            if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            return fmt;
+        }
+    </script>
+</body>
+</html>

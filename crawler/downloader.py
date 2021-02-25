@@ -3,17 +3,14 @@ import requests
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 '
                   'Safari/537.36',
-    'Cookie': 'll="118186"; bid=si0jzbpvI-4; __utma=30149280.1362564207.1610938321'
-              '.1610975181.1610982299.6; __utmc=30149280; __utmz=30149280.1610982299'
-              '.6.2.utmcsr=accounts.douban.com|utmccn=(referral)|utmcmd=referral|utm'
-              'cct=/passport/login; __gads=ID=d32ca2d710e4d9b5-225fc955bcc500ae:T=161'
-              '0938320:RT=1610938320:S=ALNI_Ma66WM3uDFWcj7od_xUaX9FtNWFAQ; _vwo_uuid'
-              '_v2=DFC178517F7FBF8085B42E27614601F49|1951053d6277a61807c7e06ec77d8e7'
-              'c; dbcl2="230621000:33/JLvYLcXg"; ck=kunS; push_noty_num=0; push_doum'
-              'ail_num=0; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1610962765%2C%22h'
-              'ttps%3A%2F%2Faccounts.douban.com%2Fpassport%2Flogin%22%5D; _pk_id.1000'
-              '01.8cb4=629008658fdd6abd.1610954732.3.1610962788.1610960006.; __yadk_ui'
-              'd=rvnaeAEO0meNXIlzHT8Xa9jnJ8L5LtTC; __utmv=30149280.23062; __utmb=30149280.0.10.1610982299'
+    'Cookie': '__mta=55361172.1609317296162.1614256759186.1614256791658.15; __mta=55361172.1609317296162.'
+              '1614255198120.1614256743889.5; _lxsdk_cuid=176b2c927f6c8-02ecb602b6816-5a301e44-144000-176b2c927f6c8; '
+              '_lxsdk=E39604D04A7911EB91B6516866DCC349809EF005276E494FB4E4B680791C8200; '
+              'Hm_lvt_703e94591e87be68cc8da0da7cbd0be2=1609317296,1609317320,1611113357; '
+              '__mta=55361172.1609317296162.1609317320550.1611113383247.3; theme=moviepro; '
+              '__mta=55361172.1609317296162.1614256243011.1614256586577.28;'
+              ' _lx_utm=utm_source=baidu&utm_medium=organic&utm_term=%E7%8C%AB%E7%9C%BC;'
+              ' _lxsdk_s=177d919208a-ede-ee6-dbf||114'
 }
 
 def download(url):
@@ -23,7 +20,7 @@ def download(url):
                             headers=HEADERS,
                             timeout=10.0)
         resp.raise_for_status()
-        return resp.text
+        return resp.text.encode('utf-8')
     except requests.RequestException as e:
         print(e)
     except Exception as e:

@@ -1,13 +1,20 @@
-import jieba.analyse
 import pymysql as py
 from time import sleep
 from snownlp import SnowNLP, seg, sentiment, tag
 import pandas as pd
 import numpy as np
+import jieba
 import matplotlib.pyplot as plt
 
 TrainingPath = "/mnt/hgfs/杂七杂八的文件/ratings/ratings.csv"
 movie_id = "24733428"
+word_counts = []
+word_num = 300
+
+with open('stop.txt', 'r', encoding='utf-8') as stop:
+    stop_word = set(stop.read().split('\n'))
+stop_word.add(" ")
+
 
 def GetTrainData(Connect):
     lib = pd.read_csv(TrainingPath)
@@ -63,9 +70,10 @@ def SQLAnalyse():
     lib = cursor.fetchall()
     GetTrainData(connect)
     print("----------------------------------Next Step: Training Model--------------------------------\n\n")
-    TrainModel() # 训练专用文本的训练时长大约为一小时
+    # TrainModel() # 训练专用文本的训练时长大约为一小时
     print(print("----------------------------------Next Step: Judge Text--------------------------------\n\n"))
     f = open("TextAnalyse/analysis.txt", "w")
+    ftext = open("TextAnalyse/wordCloud.txt", "w")
     f.truncate(0)
     secTrainLib_pos, secTrainLib_neg = [], []
     highScore_lowSenti, lowScore_highSenti = 0, 0
@@ -90,14 +98,47 @@ def SQLAnalyse():
             lowScore_highSenti += 1
             # secTrainLib_neg.append(i[2])
         f.write(i[0] + " " + str(senti) + " " + str(i[1]) + " " + i[2] + "\n")
+        ftext.write(i[2]+"\n")
+        seg_word = jieba.cut(i[2])
+        for word in seg_word:
+            if word not in stop_word:
+                word_counts.append(word)
     f.close()
+    ftext.close()
     print("测量值低于实际值的数目为：", highScore_lowSenti)
     print("测量值高于实际值的数目为", lowScore_highSenti)
     print("最终预测正确的比例为:", (len(allLib)-highScore_lowSenti-lowScore_highSenti) / len(allLib))
     print("打分为0的观众中积极的个数为：", len(secTrainLib_pos), "占总人数比例为:", len(secTrainLib_pos)/(len(secTrainLib_pos) + len(secTrainLib_neg)))
+    '''
     for key in dicts.keys():
         cursor.execute("update short_comments set emotion="+str(round(dicts[key], 2)) + " where user_id = '" + str(key) + "';")
     connect.commit()
     DataShow(allLib)
-
+    '''
 SQLAnalyse()
+import wordcloud
+
+from PIL import Image
+
+import collections
+
+print('\n开始制作词云……')                    # 提示当前状态
+mask = np.array(Image.open('IMG.JPG'))      # 定义词频背景
+wc = wordcloud.WordCloud(
+    font_path='NotoSerifCJK-Bold.ttc', # 设置字体（这里选择“仿宋”）
+    background_color='white',                   # 背景颜色
+    mask=mask,                                # 文字颜色+形状（有mask参数再设定宽高是无效的）
+    max_words=word_num,                         # 显示词数
+    max_font_size=150                         # 最大字号
+)
+
+most_num = collections.Counter(word_counts)
+most_num_top = most_num.most_common(word_num)
+wc.generate_from_frequencies(most_num)                                        # 从字典生成词云
+wc.recolor(color_func=wordcloud.ImageColorGenerator(mask))                       # 将词云颜色设置为背景图方案
+plt.figure('词云')                                                               # 弹框名称与大小
+plt.subplots_adjust(top=0.99,bottom=0.01,right=0.99,left=0.01,hspace=0,wspace=0) # 调整边距
+plt.imshow(wc, interpolation='bilinear')                       # 处理词云
+plt.axis('off')                                                                  # 关闭坐标轴
+print('制作完成！')                                                             # 提示当前状态
+plt.show()

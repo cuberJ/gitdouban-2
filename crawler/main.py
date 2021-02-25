@@ -52,7 +52,6 @@ class Crawler(object):
         self._manager.append_new_urls(urls, base_url)
 
         print(urls)
-        # time.sleep(100)
         while self._manager.has_new_url():
             time.sleep(random.randint(1, 5))
             new_url = self._manager.get_new_url()
@@ -155,17 +154,47 @@ class Crawler(object):
             self._processor.mBox(movie_name=movie_name, mbox=mbox)
 
 
-    def mBoxList(self, movie_name, movie_ID):
-        while True:
+    def mBoxList(self):
+        '''
+              while True:
             html_main = download("https://piaofang.maoyan.com/box-office?ver=normal")
             html_score = download("https://movie.douban.com/subject/{}/?from=showing".format(movie_id))
             score, mbox = GetmBox(movie_name=movie_name, html_main=html_main, html_score=html_score)
             self._processor.mBoxList(movie_ID=movie_id, movie_name = movie_name, mbox=mbox, score=score)
             time.sleep(300)
+        '''
+        self.MaoyanHistoryBox()
 
+    def MaoyanHistoryBox(self):
+        Boxurl = "http://piaofang.maoyan.com/mdb/rank"
+        html_main = download(Boxurl)
+        soup = BeautifulSoup(html_main, 'lxml')
+        list1 = soup.find_all('script')[2]
+        list1 = re.findall(r'AppData.*]', str(list1))[0]
+        list1 = re.findall(r"\"data.*]", list1)[0]
+        list1 = "{" + list1 + "}}"
+        list1 = json.loads(list1)
+        data = list1['data']['list']
+        count = 1
+        baseUrl = "http://piaofang.maoyan.com/movie/"
+        for i in data:
+            url = baseUrl + str(i['movieId'])
+            print(i['movieId'], i['movieName'], count)
+            count += 1
+            actor_html = download(url)
+            actor1, actor2 = actorEffect(actor_html)
+            self._processor.Actor(i['movieName'], actor1, actor2)
+            sleep(10)
+            movie_html = download(url + "/boxshow?")
+            allbox, firstweek, firstday, date = Mbox(movie_html)
+            url = url + "/wantindex"
+            weibo_html = download(url)
+            effect = WeiboEffect(weibo_html)
+            self._processor.MaoyanHistoryMovie(movie_name=i['movieName'], allincome=allbox, firstday=firstday, firstweek=firstweek, datetime=date, watchcount=effect)
+            sleep(2)
 
     def testrun(self, url):
-        self.mBoxList("心灵奇旅", movie_id)
+        self.mBoxList()
 
 
 if __name__ == "__main__":

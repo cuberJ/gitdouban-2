@@ -76,3 +76,21 @@ class Processor(object):
         self.cursor.execute("insert into cur_income (ID, name, dates, scores, incomes) values('" + info)
         self.connect.commit()
 
+    def MaoyanHistoryMovie(self, movie_name="", allincome=-1, firstday=-1, firstweek=-1, datetime=" ", watchcount=-1, weibo=0):
+
+        info = str(movie_name) + "'," + str(allincome) + "," + str(firstday) + "," + \
+               str(firstweek) + ",'" + str(datetime) + "'," + str(weibo) + "," + str(watchcount) + ")"
+        self.cursor.execute("replace into historymovie"
+                            "(moviename, allbox, firstdaybox, firstweekbox, datetime, weiboeffect, watchcount) values ('" + info)
+        self.connect.commit()
+
+    def Actor(self, movie_name, actor1, actor2):
+        info = movie_name + "','" + actor1 + "')"
+        self.cursor.execute("replace into actor(moviename, actorname) values('" + info)
+        info = movie_name + "','" + actor2 + "')"
+        self.cursor.execute("replace into actor(moviename, actorname) values('" + info)
+        self.cursor.execute("if not exists(select * from actoreffect where actorname='"+actor1
+                            + "') insert into actoreffect(actorname) values ('" + actor1 + "')")
+        self.cursor.execute("if not exists(select * from actoreffect where actorname='"+actor2
+                            + "') insert into actoreffect(actorname) values ('" + actor2 + "')")
+        self.connect.commit()

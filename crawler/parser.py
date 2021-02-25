@@ -1,6 +1,8 @@
 import datetime
 import urllib.parse
 import re
+import json
+from time import sleep
 from crawler.downloader import download
 
 SCORE = {"还行": 3, "推荐": 4, "力荐": 5, "较差": 2, "很差": 1, "0": 0}
@@ -130,25 +132,30 @@ def GetSimilarMovieIncome(html):
     print(href)
     return href
 
-def Mbox(html):
-    soup = BeautifulSoup(html, "lxml")
-    #href = soup.find_all("div", attrs={"class":"tab-desc tab-content active"})[0].find_all('div', attrs={'class': "module"})[-2]
-    # print(href)
-    # href = href.find_all('div', attrs={'class': "film-mbox-item"})
-    # print(href)
-    #href = href.find_all('div', attrs={'class': 'mbox-name'})
-    #print(href)
-    href = soup.find_all('div', attrs={'class': 'mbox-name'})
-    print(href)
-    for i in range(len(href)):
-        if(href[i].string == '累计票房(万)'):
-            href = href[i-1].string
-            break
-    print(href)
-    if re.match(r".*\d+", href):
-        return href
-    return -1
+def Mbox(html):  # 同时获取三个票房信息及微博影响指数
+    soup = BeautifulSoup(html, 'lxml')
+    date = soup.find_all('div', attrs={"class": "info-etitle-bar"})[0].get_text()
+    date = re.findall(r'\d+-\d+-\d+', date)[0]
+    print(date)
 
+    list1 = re.findall(r'AppData.*]', str(soup))[0]
+    allbox = re.findall(r'累计综合票房.*\"\d+\.\d\"},{', list1)
+    firstdayBox = re.findall(r'首日综合票房.*\"\d+\.\d\"},{', list1)
+    firstWeekBox = re.findall(r'首周综合票房.*\"\d+\.\d\"}', list1)
+    if len(allbox) > 0:
+        allbox = re.findall(r'\d+\.\d', allbox[0])[0]
+    else:
+        allbox = -1
+    if len(firstdayBox) > 0:
+        firstdayBox = re.findall(r'\d+\.\d', firstdayBox[0])[0]
+    else:
+        firstdayBox = -1
+    if len(firstWeekBox) > 0:
+        firstWeekBox = re.findall(r'\d+\.\d', firstWeekBox[0])[0]
+    else:
+        firstWeekBox = -1
+    print(allbox, firstWeekBox, firstdayBox)
+    return allbox, firstWeekBox, firstdayBox, date
 
 def GetmBox(html_main, html_score, movie_name):
     # html_main = download("https://piaofang.maoyan.com/box-office?ver=normal")
@@ -166,6 +173,19 @@ def GetmBox(html_main, html_score, movie_name):
             return score, mbox
     return 0, 0
 
+def WeiboEffect(html):
+    soup = BeautifulSoup(html, 'lxml')
+    effect = soup.find_all('div', attrs={"class": "add-want-item-th"})[0]
+    effect = effect.find_all('span', attrs={"class": "number"})[0].get_text()
+    effect = re.findall(r'\d+', effect)[0]
+    print(effect)
+    return effect
 
-
-
+def actorEffect(html):
+    soup = BeautifulSoup(html, 'lxml')
+    print(soup)
+    actor = soup.find_all('p', attrs={'class': 'title ellipsis-1'})
+    print(actor)
+    for i in actor:
+        i = i.get_text()
+    return actor[0], actor[1]
