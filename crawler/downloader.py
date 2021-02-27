@@ -1,16 +1,13 @@
 import requests
 
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 '
-                  'Safari/537.36',
-    'Cookie': '__mta=55361172.1609317296162.1614256759186.1614256791658.15; __mta=55361172.1609317296162.'
-              '1614255198120.1614256743889.5; _lxsdk_cuid=176b2c927f6c8-02ecb602b6816-5a301e44-144000-176b2c927f6c8; '
-              '_lxsdk=E39604D04A7911EB91B6516866DCC349809EF005276E494FB4E4B680791C8200; '
-              'Hm_lvt_703e94591e87be68cc8da0da7cbd0be2=1609317296,1609317320,1611113357; '
-              '__mta=55361172.1609317296162.1609317320550.1611113383247.3; theme=moviepro; '
-              '__mta=55361172.1609317296162.1614256243011.1614256586577.28;'
-              ' _lx_utm=utm_source=baidu&utm_medium=organic&utm_term=%E7%8C%AB%E7%9C%BC;'
-              ' _lxsdk_s=177d919208a-ede-ee6-dbf||114'
+    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0',
+    'Cookie': 'bid=4ZvrHsVQAxk; __utma=30149280.1982148657.1614305304.1614356354.1614388342.7; __utmc=30149280; __utmz=30149280.1614353770.5.3.utmcsr=accounts.douban.com|utmccn=(referral)|utmcmd=referral|utmcct=/passport/login; dbcl2="226186082:fJyLU83AJpE"; ck=6GEb; push_noty_num=0; push_doumail_num=0; __utmv=30149280.22618; ll="118186"; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1614356352%2C%22https%3A%2F%2Fmovie.douban.com%2Fsubject%2F10440138%2Fcomments%3Fstart%3D40%26limit%3D20%26sort%3Dnew_score%26status%3DP%22%5D; _pk_id.100001.8cb4=ac1dc641689ce708.1614325893.2.1614359970.1614325893.; __gads=ID=937de71efde28be1-22d6cfcc24c6000f:T=1614326356:RT=1614326356:S=ALNI_MZyXU9EqkZ_T0cROHH084wsdmjz5Q; _vwo_uuid_v2=D02D78448D78576FFE797CAA885308AA7|78a90596ffed9a57c5e970e69b1b7b95; __utmb=30149280.1.10.1614388342; __utmt=1; ap_v=0,6.0'
+
+    # 注意：cookie一定要分段，否则可能会折叠导致latin字符报错
+    # 同时header一定要用Ubuntu浏览器下的，否则也会出现latin报错
+
+
 }
 
 def download(url):
@@ -18,9 +15,9 @@ def download(url):
         # 如果不登录抓取的数据可能会很有限（未证实），这里简化处理认证部分逻辑，直接把我的cookie信息复制过来
         resp = requests.get(url,
                             headers=HEADERS,
-                            timeout=10.0)
+                            timeout=30.0)
         resp.raise_for_status()
-        return resp.text.encode('utf-8')
+        return resp.text# .encode('utf-8')
     except requests.RequestException as e:
         print(e)
     except Exception as e:

@@ -5,14 +5,13 @@ from crawler.downloader import download
 from crawler.parser import *
 from crawler.processor import *
 import re
+import string
+import json
 import random
 import time
-import urllib
 import requests
 
-movie_id = 24733428
-base_url = 'https://movie.douban.com/subject/{}/comments'.format(movie_id)
-review_base_url = 'https://movie.douban.com/subject/{}/reviews'.format(movie_id)
+
 HEADERS={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87'
                   'Safari/537.36',
          'Cookie':"uuid_n_v=v1; uuid=084A0C205AD011EB9801B7C95A8ED85D27C942E7072C4F38979342DCCDC84A25;"
@@ -28,9 +27,11 @@ HEADERS={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 
 
 
 class Crawler(object):
+    movie_id = 0
+    base_url = 'https://movie.douban.com/subject/{}/comments'.format(movie_id)
+    review_base_url = 'https://movie.douban.com/subject/{}/reviews'.format(movie_id)
 
     def __init__(self):
-        self._manager = Manager(base_url)
         self._processor = Processor()
 
     def start(self, urls):
@@ -49,10 +50,15 @@ class Crawler(object):
                 urls[0] = new_url
             b.close()
 
-        self._manager.append_new_urls(urls, base_url)
+        self._manager.append_new_urls(urls, self.base_url)
 
         print(urls)
-        while self._manager.has_new_url():
+        self._processor.cursor.execute("select count(*) from short_comments where ID='" + self.movie_id + "'")
+        count = self._processor.cursor.fetchall()[0]
+        count = int(int(count[0]) / 20 )
+        print(count)
+        while self._manager.has_new_url() and count < 20:
+            count += 1
             time.sleep(random.randint(1, 5))
             new_url = self._manager.get_new_url()
             print('开始下载第{:03}个URL：{}'.format(number, new_url))
@@ -67,14 +73,15 @@ class Crawler(object):
             links, results = parse(html, new_url)
             print("xiayiye de url shi", links)
             if len(links) > 0:
-                self._manager.append_new_urls(links, base_url)
+                self._manager.append_new_urls(links, self.base_url)
             if len(results) > 0:
                 for result in results:
                     self._processor.Commment(user_name=result['author'],
                                              user_url=result['user_url'],
                                              user_ID=result['user_ID'],
                                              user_comment=result['comment'],
-                                             user_score=result['star']) # user_name, user_url, user_ID, user_comment,user_score, ID
+                                             user_score=result['star'],
+                                             ID=self.movie_id) # user_name, user_url, user_ID, user_comment,user_score, ID
                     # print("database start .......")
             number += 1
 
@@ -91,7 +98,7 @@ class Crawler(object):
                 urls[0] = new_url
             b.close()
 
-        self._manager.append_new_urls(urls, review_base_url)
+        self._manager.append_new_urls(urls, self.review_base_url)
 
         print(urls)
         # time.sleep(100)
@@ -107,16 +114,17 @@ class Crawler(object):
             if html is None:
                 print('html is empty .')
                 continue
-            links, results = Reviews(html, new_url)
+            links, results = Reviews(html, new_url, self.movie_id)
             print("xiayiye de url shi", links, results)
             if len(links) > 0:
-                self._manager.append_new_urls(links, review_base_url)
+                self._manager.append_new_urls(links, self.review_base_url)
             if len(results) > 0:
                 for result in results:
                     self._processor.ReviewComment(user_name=result['author'],
                                              user_url=result['user_url'],
                                              user_ID=result['user_ID'],
-                                             user_score=result['star'])  # user_name, user_url, user_ID, user_comment,user_score, ID
+                                             user_score=result['star'],
+                                            ID=self.movie_id)  # user_name, user_url, user_ID, user_comment,user_score, ID
                     # print("database start .......")
             number += 1
 
@@ -124,7 +132,7 @@ class Crawler(object):
 
     def SimilarMovies(self):
         # 获取所有相似电影推荐的评分，评论数,并且通过伊恩网爬取历史票房数据
-        similar_html = download("https://movie.douban.com/subject/{}/".format(movie_id))
+        similar_html = download("https://movie.douban.com/subject/{}/".format(self.movie_id))
         similar_html, similar_name = SilimarMovie(similar_html)
         for i in range(len(similar_name)):
             temp_html = download(similar_html[i])
@@ -135,23 +143,29 @@ class Crawler(object):
                                          name=similar_name[i], ID=id)
 
 
-    def SimilarMoviesIncome(self):
+    def DoubanHistoryMovie(self):
         cursor = self._processor.connect.cursor()
-        cursor.execute("select name from basic_info where income is null")
+        cursor.execute("select ID, name from basic_info where score is NULL")
         similar_name = cursor.fetchall()
-        print(len(similar_name))
-        for i in range(len(similar_name)):
-            movie_name = similar_name[i][0]
-            href = urllib.request.quote("https://maoyan.com/query?kw="+movie_name, safe=";/?:@&=+$,", encoding="utf-8")  # 编码
-            print(href)
-            similar_income_html = requests.get(href, headers=HEADERS).text
-            href = GetSimilarMovieIncome(similar_income_html)
-            html = requests.get(href, headers=HEADERS).text
-            with open("document/long.html", 'w+', encoding="utf-8") as f:
-                f.write(html)
+        print(len(similar_name))  # 获得了所有尚未在豆瓣查询过的电影名称
+        for i in similar_name:
+            self.movie_id = i[0]
+            movie_name = i[1]
+            self.base_url = 'https://movie.douban.com/subject/{}/comments'.format(self.movie_id)
+            self.review_base_url = 'https://movie.douban.com/subject/{}/reviews'.format(self.movie_id)
+            print("当前要爬的电影是：", movie_name, self.movie_id)
+            self._manager = Manager(self.base_url)
+            root_urls = ['?'.join([self.base_url, 'start=0'])]
+            # sleep(10)
+            self.start(root_urls)
+            href = "https://movie.douban.com/subject/" + self.movie_id + "/"
+            temp_html = download(href)
+            score, comment_num, review, tags = Score(temp_html)
+            self._processor.BasicComment(comment_num=comment_num, score=score, long_comment_num=review, tags=tags,
+                                         name=movie_name, ID=self.movie_id)
+            with open('document/breaking_point.txt', 'w+') as f:
+                f.write("")
                 f.close()
-            mbox = Mbox(html)
-            self._processor.mBox(movie_name=movie_name, mbox=mbox)
 
 
     def mBoxList(self):
@@ -194,19 +208,19 @@ class Crawler(object):
             sleep(2)
 
     def testrun(self, url):
-        self.mBoxList()
+        # self.mBoxList()
+        self.DoubanHistoryMovie()
 
 
 if __name__ == "__main__":
-
     crawler = Crawler()
     crawler.testrun(" ")
     # crawler.testrun("https://movie.douban.com/subject/{}/reviews".format(movie_id))
     # time.sleep(100)
     # 同时抓取看过和未看过的链接，两者区别在于status查询参数上
-    root_urls = ['?'.join([review_base_url, 'start=0'])]
+    # root_urls = ['?'.join([review_base_url, 'start=0'])]
                  #'?'.join([base_url, 'start=0&limit=20&sort=time&status=P'])]
     # nums = crawler.start(root_urls)
     # nums = crawler.start2(root_urls)
-    crawler.SimilarMoviesIncome()
+    # crawler.SimilarMoviesIncome()
     # print('爬虫执行完成，共抓取{}个URL'.format(nums))

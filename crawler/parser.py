@@ -1,12 +1,12 @@
 import datetime
 import urllib.parse
 import re
-import json
+import execjs
 from time import sleep
 from crawler.downloader import download
 
 SCORE = {"还行": 3, "推荐": 4, "力荐": 5, "较差": 2, "很差": 1, "0": 0}
-movie_id = "24733428"
+
 
 from bs4 import BeautifulSoup
 
@@ -64,8 +64,6 @@ def SilimarMovie(html):
         print(href, name)
         similar_url.append(href)
         similar_name.append(name)
-
-
     return similar_url, similar_name
 
 def Score(html):
@@ -84,7 +82,7 @@ def Score(html):
     review = re.findall(r"\d+", review)[0]
     return score, comments_num, review, tags
 
-def Reviews(html, url):
+def Reviews(html, url, movie_id):
     soup = BeautifulSoup(html, 'html.parser')
 
     # 超链接列表
@@ -123,14 +121,26 @@ def Reviews(html, url):
         print(i)
     return links, results
 
-def GetSimilarMovieIncome(html):
+def GetMovieidDouban(html):
+    # html = open('document/long.html').read()
     soup = BeautifulSoup(html, 'lxml')
-    href = soup.find_all('dl', attrs={'class': 'movie-list'})[0]
-    #print(href)
-    href = href.find_all('div', attrs={'class': "channel-detail movie-item-title"})[0].find_all('a')[0].get('href')
-    href = "https://maoyan.com" + href
+    r = re.search('window.__DATA__ = "([^"]+)"', html).group(1)  # 加密的数据
+    with open('main.js', 'r', encoding='gbk') as f:
+        decrypt_js = f.read()
+    ctx = execjs.compile(decrypt_js)
+    data = ctx.call('decrypt', r)
+    for item in data['payload']['items']:
+        print(item)
+    href = soup.find_all('div', attrs={'id': 'wrapper'})[0]
+    print(href)
+    href = href.find_all('div', attrs={'class': 'item-root'})[0]
+    print(href)
+    href = href.find_all('a', attrs={'class': "cover-link"})[0].get('href')
+    href = re.findall(r'\d+', href)
     print(href)
     return href
+
+# GetMovieidDouban(" ")
 
 def Mbox(html):  # 同时获取三个票房信息及微博影响指数
     soup = BeautifulSoup(html, 'lxml')

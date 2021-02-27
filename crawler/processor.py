@@ -29,12 +29,12 @@ class Processor(object):
     def __del__(self):
         self.connect.close()
 
-    def Commment(self, user_name, user_url, user_ID, user_comment, user_score, ID = movie_id):
+    def Commment(self, user_name, user_url, user_ID, user_comment, user_score, ID):
         info = str(ID) + "','" + user_name + "'," + str(user_score) \
                + ",'" + user_comment + "','" + user_url + "','" + user_ID + "')"
         print(info)
-        user_time = UserInfo(user_url)
-        user_info = user_name + "','" + user_url + "','" + user_ID + "','" + user_time + "')"
+        user_time = 'null'#UserInfo(user_url)
+        user_info = user_name + "','" + user_url + "','" + user_ID + "'," + user_time + ")"
         self.cursor.execute("replace into short_comments "
                             "(ID,user_name,user_score,user_comment, user_url, user_ID) values ('" + info)
         self.cursor.execute("replace into user_info "
@@ -52,7 +52,7 @@ class Processor(object):
             self.cursor.execute("replace into Tags(ID, tag) values (" + info)
             self.connect.commit()
 
-    def ReviewComment(self, user_name, user_url, user_ID, user_score, ID = movie_id):
+    def ReviewComment(self, user_name, user_url, user_ID, user_score, ID):
         info = str(ID) + "','" + user_name + "'," + str(user_score) \
                + ",'" + user_url + "','" + user_ID + "')"
         print(info)
