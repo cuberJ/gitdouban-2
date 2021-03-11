@@ -7,7 +7,7 @@ import jieba
 import matplotlib.pyplot as plt
 
 TrainingPath = "/mnt/hgfs/杂七杂八的文件/ratings/ratings.csv"
-movie_id = "24733428"
+train_count = 600000
 word_counts = []
 word_num = 300
 
@@ -24,23 +24,23 @@ def GetTrainData(Connect):
     with open("/home/cairenjie/anaconda3/lib/python3.8/site-packages/snownlp/sentiment/pos.txt", "w") as pos_f:
         for i in poslib:
             pos_f.write(str(i) + "\n")
-            #if count >= 300000:
-            #    break
-            #count += 1
+            if count >= train_count:
+                break
+            count += 1
     count = 0
     with open("/home/cairenjie/anaconda3/lib/python3.8/site-packages/snownlp/sentiment/neg.txt", "w") as neg_f:
         for i in neglib:
             neg_f.write(str(i) + "\n")
-            # if count >= 300000:
-             #   break
-            #count += 1
+            if count >= train_count:
+               break
+            count += 1
     pos_f.close()
     neg_f.close()
 
 def TrainModel():
     sentiment.train("/home/cairenjie/anaconda3/lib/python3.8/site-packages/snownlp/sentiment/neg.txt",
                     "/home/cairenjie/anaconda3/lib/python3.8/site-packages/snownlp/sentiment/pos.txt")
-    sentiment.save("/home/cairenjie/anaconda3/lib/python3.8/site-packages/snownlp/sentiment/shortcomment.marshal")
+    sentiment.save("/home/cairenjie/anaconda3/lib/python3.8/site-packages/snownlp/sentiment/shortcomment.marshal.3")
 
 def JieBaDivide(s1):
     emotion = SnowNLP(s1)
@@ -66,56 +66,64 @@ def SQLAnalyse():
                               charset='utf8mb4')
     cursor = connect.cursor()
 
-    cursor.execute("select user_ID, user_score, user_comment from short_comments comments")
-    lib = cursor.fetchall()
+    cursor.execute("select ID from basic_info where ID in(select distinct ID from short_comments where emotion is null);")
+    IDs = cursor.fetchall()
+    IDs = list(IDs)
     GetTrainData(connect)
     print("----------------------------------Next Step: Training Model--------------------------------\n\n")
-    # TrainModel() # 训练专用文本的训练时长大约为一小时
-    print(print("----------------------------------Next Step: Judge Text--------------------------------\n\n"))
-    f = open("TextAnalyse/analysis.txt", "w")
-    ftext = open("TextAnalyse/wordCloud.txt", "w")
-    f.truncate(0)
-    secTrainLib_pos, secTrainLib_neg = [], []
-    highScore_lowSenti, lowScore_highSenti = 0, 0
-    allLib = []
-    dicts = {}
-    for i in lib:
-        senti = JieBaDivide(i[2])
-        if(i[1] > 0):
-            allLib.append(senti)
-            dicts[i[0]] = senti
-        else:
-            allLib.append(senti)
-            dicts[i[0]] = senti
-            if senti >= 0.5:
-                secTrainLib_pos.append(senti)
+    # TrainModel()  # 训练专用文本的训练时长大约为一小时
+
+    for id in IDs:
+        cursor.execute("select user_ID, user_score, user_comment from short_comments comments where ID = '" + id[0] + "'")
+        lib = cursor.fetchall()
+        print(print("----------------------------------Next Step: " + id[0] + "Judge Text, 总数是" + str(len(lib)) + "--------------------------------\n\n"))
+        f = open("TextAnalyse/analysis.txt", "w")
+        ftext = open("TextAnalyse/wordCloud.txt", "w")
+        f.truncate(0)
+        secTrainLib_pos, secTrainLib_neg = [], []
+        highScore_lowSenti, lowScore_highSenti = 0, 0
+        allLib = []
+        dicts = {}
+        for i in lib:
+            senti = JieBaDivide(i[2])
+            if(i[1] > 0):
+                allLib.append(senti)
+                dicts[i[0]] = senti
             else:
-                secTrainLib_neg.append(senti)
-        if i[1] >= 4 and senti < 0.5:
-            highScore_lowSenti += 1
-            # secTrainLib_pos.append(i[2])
-        elif i[1] <= 2 and i[1] > 0 and senti >= 0.5:
-            lowScore_highSenti += 1
-            # secTrainLib_neg.append(i[2])
-        f.write(i[0] + " " + str(senti) + " " + str(i[1]) + " " + i[2] + "\n")
-        ftext.write(i[2]+"\n")
-        seg_word = jieba.cut(i[2])
-        for word in seg_word:
-            if word not in stop_word:
-                word_counts.append(word)
-    f.close()
-    ftext.close()
-    print("测量值低于实际值的数目为：", highScore_lowSenti)
-    print("测量值高于实际值的数目为", lowScore_highSenti)
-    print("最终预测正确的比例为:", (len(allLib)-highScore_lowSenti-lowScore_highSenti) / len(allLib))
-    print("打分为0的观众中积极的个数为：", len(secTrainLib_pos), "占总人数比例为:", len(secTrainLib_pos)/(len(secTrainLib_pos) + len(secTrainLib_neg)))
-    '''
-    for key in dicts.keys():
-        cursor.execute("update short_comments set emotion="+str(round(dicts[key], 2)) + " where user_id = '" + str(key) + "';")
-    connect.commit()
-    DataShow(allLib)
-    '''
+                allLib.append(senti)
+                dicts[i[0]] = senti
+                if senti >= 0.5:
+                    secTrainLib_pos.append(senti)
+                else:
+                    secTrainLib_neg.append(senti)
+            if i[1] >= 4 and senti < 0.5:
+                highScore_lowSenti += 1
+                # secTrainLib_pos.append(i[2])
+            elif i[1] <= 2 and i[1] > 0 and senti >= 0.5:
+                lowScore_highSenti += 1
+                # secTrainLib_neg.append(i[2])
+            f.write(i[0] + " " + str(senti) + " " + str(i[1]) + " " + i[2] + "\n")
+            ftext.write(i[2]+"\n")
+            seg_word = jieba.cut(i[2])
+            for word in seg_word:
+                if word not in stop_word:
+                    word_counts.append(word)
+        f.close()
+        ftext.close()
+        print("current movie id is", id, ", the len of allLib is:", len(allLib))
+        print("测量值低于实际值的数目为：", highScore_lowSenti)
+        print("测量值高于实际值的数目为", lowScore_highSenti)
+        print("最终预测正确的比例为:", (len(allLib)-highScore_lowSenti-lowScore_highSenti) / len(allLib))
+        if len(secTrainLib_pos) + len(secTrainLib_neg) > 0:
+            print("打分为0的观众中积极的个数为：", len(secTrainLib_pos), "占总人数比例为:", len(secTrainLib_pos)/(len(secTrainLib_pos) + len(secTrainLib_neg)))
+        print(len(dicts))
+        for key in dicts.keys():
+            cursor.execute("update short_comments set emotion="+str(round(dicts[key], 2)) + " where user_id = '" + str(key) + "' and ID='" + id[0] + "'")
+        connect.commit()
+        # DataShow(allLib)
+
 SQLAnalyse()
+'''
 import wordcloud
 
 from PIL import Image
@@ -142,3 +150,4 @@ plt.imshow(wc, interpolation='bilinear')                       # 处理词云
 plt.axis('off')                                                                  # 关闭坐标轴
 print('制作完成！')                                                             # 提示当前状态
 plt.show()
+'''

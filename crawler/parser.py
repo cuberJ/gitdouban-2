@@ -82,6 +82,17 @@ def Score(html):
     review = re.findall(r"\d+", review)[0]
     return score, comments_num, review, tags
 
+def ActorInfo(html):
+    soup = BeautifulSoup(html, 'lxml')
+    person = soup.find_all('div', attrs={'id': 'info'})[0]
+    leader = person.find_all('a', attrs={'rel':'v:directedBy'})[0]
+    actors = person.find_all('a', attrs={'rel':'v:starring'})
+    print(leader)
+    print(actors)
+    leader = leader.string
+    print(leader, actors[0].string, actors[1].string, actors[2].string)
+    return actors[0].string, actors[1].string, actors[2].string, leader
+
 def Reviews(html, url, movie_id):
     soup = BeautifulSoup(html, 'html.parser')
 
@@ -124,13 +135,6 @@ def Reviews(html, url, movie_id):
 def GetMovieidDouban(html):
     # html = open('document/long.html').read()
     soup = BeautifulSoup(html, 'lxml')
-    r = re.search('window.__DATA__ = "([^"]+)"', html).group(1)  # 加密的数据
-    with open('main.js', 'r', encoding='gbk') as f:
-        decrypt_js = f.read()
-    ctx = execjs.compile(decrypt_js)
-    data = ctx.call('decrypt', r)
-    for item in data['payload']['items']:
-        print(item)
     href = soup.find_all('div', attrs={'id': 'wrapper'})[0]
     print(href)
     href = href.find_all('div', attrs={'class': 'item-root'})[0]

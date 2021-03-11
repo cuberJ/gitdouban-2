@@ -28,7 +28,7 @@ HEADERS={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 
 
 class Crawler(object):
     movie_id = 0
-    base_url = 'https://movie.douban.com/subject/{}/comments'.format(movie_id)
+    base_url = 'https://movie.douban.com/subject/{}/comments?start=300&limit=20&status=P&sort=new_score'.format(movie_id)
     review_base_url = 'https://movie.douban.com/subject/{}/reviews'.format(movie_id)
 
     def __init__(self):
@@ -55,11 +55,11 @@ class Crawler(object):
         print(urls)
         self._processor.cursor.execute("select count(*) from short_comments where ID='" + self.movie_id + "'")
         count = self._processor.cursor.fetchall()[0]
-        count = int(int(count[0]) / 20 )
+        count = int(int(count[0]) / 20)
         print(count)
         while self._manager.has_new_url() and count < 20:
             count += 1
-            time.sleep(random.randint(1, 5))
+            # time.sleep(random.randint(1, 5))
             new_url = self._manager.get_new_url()
             print('开始下载第{:03}个URL：{}'.format(number, new_url))
             with open("document/breaking_point.txt", "w+", encoding="utf-8") as f:
@@ -145,13 +145,17 @@ class Crawler(object):
 
     def DoubanHistoryMovie(self):
         cursor = self._processor.connect.cursor()
-        cursor.execute("select ID, name from basic_info where score is NULL")
+        # cursor.execute("select ID, name from basic_info where score is NULL")
+        # cursor.execute("with views(ID, counts) as (select ID, count(*) from short_comments group by ID) select ID from views where counts < 380") # 获得了所有尚未在豆瓣查询过的电影名称
+        cursor.execute("select ID, name from basic_info where ID not in (select distinct ID from short_comments )")
         similar_name = cursor.fetchall()
-        print(len(similar_name))  # 获得了所有尚未在豆瓣查询过的电影名称
+        print(len(similar_name))
         for i in similar_name:
             self.movie_id = i[0]
-            movie_name = i[1]
-            self.base_url = 'https://movie.douban.com/subject/{}/comments'.format(self.movie_id)
+            cursor.execute("select name from basic_info where ID='" + self.movie_id + "'")
+            movie_name = cursor.fetchall()
+            movie_name = movie_name[0][0]
+            self.base_url = 'https://movie.douban.com/subject/{}/comments?start=300&limit=20&status=P&sort=new_score'.format(self.movie_id)
             self.review_base_url = 'https://movie.douban.com/subject/{}/reviews'.format(self.movie_id)
             print("当前要爬的电影是：", movie_name, self.movie_id)
             self._manager = Manager(self.base_url)
@@ -161,8 +165,11 @@ class Crawler(object):
             href = "https://movie.douban.com/subject/" + self.movie_id + "/"
             temp_html = download(href)
             score, comment_num, review, tags = Score(temp_html)
-            self._processor.BasicComment(comment_num=comment_num, score=score, long_comment_num=review, tags=tags,
-                                         name=movie_name, ID=self.movie_id)
+            actor1, actor2, actor3, leader = ActorInfo(temp_html)
+            # sleep(100)
+            # self._processor.BasicComment(comment_num=comment_num, score=score, long_comment_num=review, tags=tags,
+            #                             name=movie_name, ID=self.movie_id)
+            self._processor.Actor(actor3=actor3, actor2=actor2, actor1=actor1, leader=leader, movie_name=movie_name)
             with open('document/breaking_point.txt', 'w+') as f:
                 f.write("")
                 f.close()

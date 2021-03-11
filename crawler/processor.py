@@ -1,6 +1,7 @@
 import pymysql as py
 from crawler.user import UserInfo
 import time
+import csv
 
 '''
     数据库分为basic_info, short_comments, long_comments 个表
@@ -84,13 +85,53 @@ class Processor(object):
                             "(moviename, allbox, firstdaybox, firstweekbox, datetime, weiboeffect, watchcount) values ('" + info)
         self.connect.commit()
 
-    def Actor(self, movie_name, actor1, actor2):
-        info = movie_name + "','" + actor1 + "')"
-        self.cursor.execute("replace into actor(moviename, actorname) values('" + info)
-        info = movie_name + "','" + actor2 + "')"
-        self.cursor.execute("replace into actor(moviename, actorname) values('" + info)
-        self.cursor.execute("if not exists(select * from actoreffect where actorname='"+actor1
-                            + "') insert into actoreffect(actorname) values ('" + actor1 + "')")
-        self.cursor.execute("if not exists(select * from actoreffect where actorname='"+actor2
-                            + "') insert into actoreffect(actorname) values ('" + actor2 + "')")
+    def Actor(self, movie_name, actor1, actor2, actor3, leader):
+        info = movie_name + "','" + actor1 + "','" + actor2 + "','" + actor3 + "','" + leader + "')"
+        self.cursor.execute("replace into actor(moviename, actorname1, actorname2, actorname3, leader) values('" + info)
+        self.cursor.execute("replace into actoreffect(actorname) values ('" + actor1 + "')")
+        self.cursor.execute("replace into actoreffect(actorname) values ('" + actor2 + "')")
+        self.cursor.execute("replace into actoreffect(actorname) values ('" + actor3 + "')")
+        self.cursor.execute("replace into actoreffect(actorname) values ('" + leader + "')")
         self.connect.commit()
+
+    def temp_get(self): # csv序列:ID, movie_name, score, short_comment_num, long_comment_num, short_comment_score, long_comment_score,
+        # actor_score, leader_score, ,tags_score, firstday, firstweek, allbox, watch_count, datetime
+        '''
+        self.cursor.execute("select * from basic_info")
+        IDs = self.cursor.fetchall()
+        f = open("/mnt/hgfs/杂七杂八的文件/temp_movie.csv", 'w', newline="", encoding='utf-8')
+        write = csv.writer(f)
+        for id in IDs:
+            write.writerow(id)
+
+        f = open("/mnt/hgfs/杂七杂八的文件/temp_movie.csv", 'r', newline="", encoding='utf-8')
+        read = csv.reader(f)
+        for id in read:
+            if read.line_num == 1:
+                continue
+            print(id[0], id[6])
+            self.cursor.execute("update basic_info set enviroment=" + id[6] + " where ID='" + id[0] + "'")
+        self.connect.commit()
+
+        self.cursor.execute("select moviename from actor")
+        names = self.cursor.fetchall()
+        for name in names:
+            self.cursor.execute("select actorname1, actorname2, actorname3, leader from actor where moviename='" + name[0] +"'")
+            scores = self.cursor.fetchall()
+            allscore = 0
+
+            if len(scores) <= 0:
+                continue
+            else:
+                print(scores[0])
+                scores = scores[0]
+                for i in scores:
+                    self.cursor.execute("select actoreffect from actoreffect where actorname='" + i + "'")
+                    temp = self.cursor.fetchall()[0][0]
+                    allscore += int(temp)
+                self.cursor.execute("update actor set effect=" + str(allscore) +" where moviename='" + name[0] + "'")
+                print(allscore, name[0])
+        self.connect.commit()
+        '''
+
+
