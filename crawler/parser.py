@@ -98,7 +98,10 @@ def Reviews(html, url, movie_id):
 
     # 超链接列表
     links = []
-    link = soup.find_all('span', attrs={"class": "next"})[0].find_all('a')[0].get('href')
+    try :
+        link = soup.find_all('span', attrs={"class": "next"})[0].find_all('a')[0].get('href')
+    except IndexError:
+        return 0, 0
     link = "https://movie.douban.com/subject/{}/reviews".format(movie_id) + link
     links.append(link)
 

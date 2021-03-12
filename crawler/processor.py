@@ -57,8 +57,8 @@ class Processor(object):
         info = str(ID) + "','" + user_name + "'," + str(user_score) \
                + ",'" + user_url + "','" + user_ID + "')"
         print(info)
-        user_time = UserInfo(user_url)
-        user_info = user_name + "','" + user_url + "','" + user_ID + "','" + user_time + "')"
+        user_time = "null"# UserInfo(user_url)
+        user_info = user_name + "','" + user_url + "','" + user_ID + "'," + user_time + ")"
         self.cursor.execute("replace into long_comments "
                             "(ID,user_name,user_score, user_url, user_ID) values ('" + info)
         self.cursor.execute("replace into user_info "
@@ -97,41 +97,27 @@ class Processor(object):
     def temp_get(self): # csv序列:ID, movie_name, score, short_comment_num, long_comment_num, short_comment_score, long_comment_score,
         # actor_score, leader_score, ,tags_score, firstday, firstweek, allbox, watch_count, datetime
         '''
-        self.cursor.execute("select * from basic_info")
-        IDs = self.cursor.fetchall()
-        f = open("/mnt/hgfs/杂七杂八的文件/temp_movie.csv", 'w', newline="", encoding='utf-8')
-        write = csv.writer(f)
-        for id in IDs:
-            write.writerow(id)
-
-        f = open("/mnt/hgfs/杂七杂八的文件/temp_movie.csv", 'r', newline="", encoding='utf-8')
-        read = csv.reader(f)
-        for id in read:
-            if read.line_num == 1:
-                continue
-            print(id[0], id[6])
-            self.cursor.execute("update basic_info set enviroment=" + id[6] + " where ID='" + id[0] + "'")
-        self.connect.commit()
-
-        self.cursor.execute("select moviename from actor")
-        names = self.cursor.fetchall()
-        for name in names:
-            self.cursor.execute("select actorname1, actorname2, actorname3, leader from actor where moviename='" + name[0] +"'")
-            scores = self.cursor.fetchall()
-            allscore = 0
-
-            if len(scores) <= 0:
+        self.cursor.execute("select avg(user_score), ID from long_comments group by ID")
+        data = self.cursor.fetchall()
+        for movie in data:
+            print(movie)
+            if movie[0] is None:
                 continue
             else:
-                print(scores[0])
-                scores = scores[0]
-                for i in scores:
-                    self.cursor.execute("select actoreffect from actoreffect where actorname='" + i + "'")
-                    temp = self.cursor.fetchall()[0][0]
-                    allscore += int(temp)
-                self.cursor.execute("update actor set effect=" + str(allscore) +" where moviename='" + name[0] + "'")
-                print(allscore, name[0])
+                self.cursor.execute("update basic_info set long_avg_score="+str(movie[0]) + " where ID='" + movie[1] +"'")
         self.connect.commit()
         '''
+        self.cursor.execute("select ID, name, datetime, allbox, firstweekbox, firstdaybox, watchcount, comment_number, long_comment_number, short_avg_emotion, long_avg_score, score, tagscore, enviroment from basic_info, historymovie where name=moviename")
+        movies = self.cursor.fetchall()
+        f = open("/mnt/hgfs/杂七杂八的文件/all_data.csv", 'w', encoding='utf-8', newline="")
+        writer = csv.writer(f)
+        writer.writerow(['ID', 'name', 'datetime', 'allbox', 'firstweekbox', 'firstdaybox', 'watchcount', 'comment_number', 'long_comment_number', 'short_avg_emotion', 'long_avg_score','score', 'tagscore', 'enviroment'])
+        for movie in movies:
+            writer.writerow(movie)
+            print(movie)
 
+
+
+pro=Processor()
+pro.temp_get()
 

@@ -102,7 +102,12 @@ class Crawler(object):
 
         print(urls)
         # time.sleep(100)
-        while self._manager.has_new_url():
+        self._processor.cursor.execute("select count(*) from long_comments where ID='" + self.movie_id + "'")
+        count = self._processor.cursor.fetchall()[0]
+        count = int(int(count[0]) / 20)
+        print(count)
+        while self._manager.has_new_url() and count < 15:
+            count += 1
             time.sleep(random.randint(1, 5))
             new_url = self._manager.get_new_url()
             print('开始下载第{:03}个URL：{}'.format(number, new_url))
@@ -116,17 +121,18 @@ class Crawler(object):
                 continue
             links, results = Reviews(html, new_url, self.movie_id)
             print("xiayiye de url shi", links, results)
-            if len(links) > 0:
-                self._manager.append_new_urls(links, self.review_base_url)
-            if len(results) > 0:
-                for result in results:
-                    self._processor.ReviewComment(user_name=result['author'],
-                                             user_url=result['user_url'],
-                                             user_ID=result['user_ID'],
-                                             user_score=result['star'],
-                                            ID=self.movie_id)  # user_name, user_url, user_ID, user_comment,user_score, ID
-                    # print("database start .......")
-            number += 1
+            if links != 0:
+                if len(links) > 0:
+                    self._manager.append_new_urls(links, self.review_base_url)
+                if len(results) > 0:
+                    for result in results:
+                        self._processor.ReviewComment(user_name=result['author'],
+                                                      user_url=result['user_url'],
+                                                      user_ID=result['user_ID'],
+                                                      user_score=result['star'],
+                                                      ID=self.movie_id)  # user_name, user_url, user_ID, user_comment,user_score, ID
+                        # print("database start .......")
+                number += 1
 
         return number
 
@@ -147,7 +153,7 @@ class Crawler(object):
         cursor = self._processor.connect.cursor()
         # cursor.execute("select ID, name from basic_info where score is NULL")
         # cursor.execute("with views(ID, counts) as (select ID, count(*) from short_comments group by ID) select ID from views where counts < 380") # 获得了所有尚未在豆瓣查询过的电影名称
-        cursor.execute("select ID, name from basic_info where ID not in (select distinct ID from short_comments )")
+        cursor.execute("select ID, name from basic_info where ID not in (select distinct ID from long_comments )")
         similar_name = cursor.fetchall()
         print(len(similar_name))
         for i in similar_name:
@@ -158,10 +164,10 @@ class Crawler(object):
             self.base_url = 'https://movie.douban.com/subject/{}/comments?start=300&limit=20&status=P&sort=new_score'.format(self.movie_id)
             self.review_base_url = 'https://movie.douban.com/subject/{}/reviews'.format(self.movie_id)
             print("当前要爬的电影是：", movie_name, self.movie_id)
-            self._manager = Manager(self.base_url)
-            root_urls = ['?'.join([self.base_url, 'start=0'])]
+            self._manager = Manager(self.review_base_url)
+            root_urls = ['?'.join([self.review_base_url, 'start=0'])]
             # sleep(10)
-            self.start(root_urls)
+            self.start2(root_urls)
             href = "https://movie.douban.com/subject/" + self.movie_id + "/"
             temp_html = download(href)
             score, comment_num, review, tags = Score(temp_html)
@@ -170,7 +176,7 @@ class Crawler(object):
             # self._processor.BasicComment(comment_num=comment_num, score=score, long_comment_num=review, tags=tags,
             #                             name=movie_name, ID=self.movie_id)
             self._processor.Actor(actor3=actor3, actor2=actor2, actor1=actor1, leader=leader, movie_name=movie_name)
-            with open('document/breaking_point.txt', 'w+') as f:
+            with open('document/long_breaking_point.txt', 'w+') as f:
                 f.write("")
                 f.close()
 
