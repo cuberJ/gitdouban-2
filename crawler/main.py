@@ -153,10 +153,11 @@ class Crawler(object):
         cursor = self._processor.connect.cursor()
         # cursor.execute("select ID, name from basic_info where score is NULL")
         # cursor.execute("with views(ID, counts) as (select ID, count(*) from short_comments group by ID) select ID from views where counts < 380") # 获得了所有尚未在豆瓣查询过的电影名称
-        cursor.execute("select ID, name from basic_info where ID not in (select distinct ID from long_comments )")
+        cursor.execute("select ID from basic_info where language is null")
         similar_name = cursor.fetchall()
         print(len(similar_name))
         for i in similar_name:
+            sleep(random.randint(1,5))
             self.movie_id = i[0]
             cursor.execute("select name from basic_info where ID='" + self.movie_id + "'")
             movie_name = cursor.fetchall()
@@ -167,14 +168,15 @@ class Crawler(object):
             self._manager = Manager(self.review_base_url)
             root_urls = ['?'.join([self.review_base_url, 'start=0'])]
             # sleep(10)
-            self.start2(root_urls)
+            # self.start2(root_urls)
             href = "https://movie.douban.com/subject/" + self.movie_id + "/"
+            print(href)
             temp_html = download(href)
-            score, comment_num, review, tags = Score(temp_html)
+            score, comment_num, review, tags, language, runtime = Score(temp_html)
             actor1, actor2, actor3, leader = ActorInfo(temp_html)
             # sleep(100)
-            # self._processor.BasicComment(comment_num=comment_num, score=score, long_comment_num=review, tags=tags,
-            #                             name=movie_name, ID=self.movie_id)
+            self._processor.BasicComment(comment_num=comment_num, score=score, long_comment_num=review, tags=tags,
+                                         name=movie_name, ID=self.movie_id, runtime=runtime, language=language)
             self._processor.Actor(actor3=actor3, actor2=actor2, actor1=actor1, leader=leader, movie_name=movie_name)
             with open('document/long_breaking_point.txt', 'w+') as f:
                 f.write("")

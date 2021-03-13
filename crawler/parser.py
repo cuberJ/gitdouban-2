@@ -74,13 +74,27 @@ def Score(html):
     comments_num = re.findall(r"\d+", comments_num)[0]
     print(comments_num,score)
     review = soup.find_all('section', attrs={'id': 'reviews-wrapper'})[0].find_all('a')[1].string
-    tags = soup.find_all('div', attrs={'class': 'tags-body'})[0]
+    tags = soup.find_all('span', attrs={'property': 'v:genre'})
     TAGS = []
     for i in tags:
         if i.string != "\n":
             TAGS.append(i.string)
+    print(TAGS)
+    language = soup.find_all('div', attrs={'id': 'info'})[0]
+    runtime = language.find_all('span', attrs={'property': 'v:runtime'})[0].string
+    runtime = re.findall(r'\d+', runtime)[0]
+    # language = language.find_all('span', attrs={'class':'pl'})[6]
+    language = re.findall(r'语言:.*<br/>', str(language))[0]
+    language = re.split(r'</span> ', language)
+    language = re.split(r'<br/>', language[1])[0]
+    print(language, runtime)
+    if re.match('汉语普通话', language) is None:
+        print(language, "changed\n\n")
+        language = '0'
+    else:
+        language = '1'
     review = re.findall(r"\d+", review)[0]
-    return score, comments_num, review, tags
+    return score, comments_num, review, tags, language, runtime
 
 def ActorInfo(html):
     soup = BeautifulSoup(html, 'lxml')
